@@ -15,13 +15,15 @@ public class Borders
 }
 
 public class PlayerMoving : MonoBehaviour {
-
+    
     [Tooltip("offset from viewport borders for player's movement")]
     public Borders borders;
     Camera mainCamera;
     bool controlIsActive = true; 
     float speed = 0.01f;
+    public float speedMultiplier = 100.0f;
     private float fixedDeltaTime;
+    private const float defaultTimeScale = 0.01f;
 
     public static PlayerMoving instance; //unique instance of the script for easy access to the script
 
@@ -39,13 +41,14 @@ public class PlayerMoving : MonoBehaviour {
         ResizeBorders();                //setting 'Player's' moving borders deending on Viewport's size
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         if (controlIsActive)
         {
 #if UNITY_STANDALONE || UNITY_EDITOR    //if the current platform is not mobile, setting mouse handling 
 
-            if (Input.GetMouseButton(0)) //if mouse button was pressed       
+            // mouse controls
+            if (Input.GetMouseButton(0))
             {
                 Vector3 mousePosition = mainCamera.ScreenToWorldPoint(Input.mousePosition); //calculating mouse position in the worldspace
                 mousePosition.z = transform.position.z;
@@ -53,12 +56,21 @@ public class PlayerMoving : MonoBehaviour {
 
                 // change time scale relative to player movement speed
                 speed = Vector3.Distance(mousePosition, transform.position);
-
                 Time.timeScale = speed;
             } else {
-                Time.timeScale = 0.01f;
+                Time.timeScale = defaultTimeScale;
             }
 
+            // keyboard controls
+            transform.position += new Vector3(
+                Input.GetAxisRaw("Horizontal") * speedMultiplier * Time.fixedDeltaTime,
+                Input.GetAxisRaw("Vertical") * speedMultiplier * Time.fixedDeltaTime,
+                0
+            );
+
+            speed = Input.GetAxis("Horizontal") + Input.GetAxis("Vertical");
+
+            Time.timeScale = speed != 0 ? 1 : defaultTimeScale;
             Time.fixedDeltaTime = this.fixedDeltaTime * Time.timeScale;
 #endif
 
